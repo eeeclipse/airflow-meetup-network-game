@@ -4,11 +4,18 @@ export default {
   theme: {
     fontFamily: {
       sans: [
+        "Pretendard",
         "NanumSquareRoundOTF",
         "Apple SD Gothic Neo",
         "Noto Sans KR",
         "system-ui",
         "sans-serif",
+      ],
+      mono: [
+        '"JetBrains Mono"',
+        "ui-monospace",
+        "SFMono-Regular",
+        "monospace",
       ],
     },
     extend: {
@@ -25,6 +32,13 @@ export default {
           800: "#0e583f",
           900: "#0c4935",
         },
+        "airflow-teal": {
+          400: "#3A99F3",
+          500: "#017CEE",
+          600: "#0162BE",
+        },
+        "bg-dark": "#0B1118",
+        "bg-paper": "#121A23",
       },
       boxShadow: {
         soft: "0 18px 40px rgba(7, 69, 49, 0.12)",
