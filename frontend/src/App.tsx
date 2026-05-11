@@ -4,6 +4,7 @@ import Home from "./modules/Home/Home.tsx";
 import BingoGame from "./modules/Bingo/BingoGame.tsx";
 import { OrganizerGate } from "./modules/Organizer/OrganizerGate.tsx";
 import { KeywordPoolEditor } from "./modules/Organizer/KeywordPoolEditor.tsx";
+import BoardPreview from "./modules/Game/BoardPreview.tsx";
 import LandingHomePage from "./modules/Landing/LandingHomePage.tsx";
 import DemoExperiencePage from "./modules/Landing/DemoExperiencePage.tsx";
 import PublicPrivacyPage from "./modules/Landing/PublicPrivacyPage.tsx";
@@ -44,6 +45,7 @@ function AppRoutes() {
               </OrganizerGate>
             }
           />
+          <Route path="/airflow/preview" element={<BoardPreview />} />
           <Route path="/admin/invite" element={<Navigate to={getAdminPath()} replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/members" element={<AdminMembersPage />} />
