@@ -114,6 +114,10 @@ out/
 .env.*
 !**/.env.example
 
+# Supabase schema dumps (contain transient auth tokens)
+SCHEMA_BASELINE.sql
+**/SCHEMA_BASELINE.sql
+
 # Optional/Other
 poetry.toml
 python-version
