@@ -44,6 +44,15 @@ class Event(Base):
     event_team: Mapped[str] = mapped_column(String(120), nullable=False, default="Event Team")
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # Networking-session window inside the broader event. Distinct from
+    # start_time/end_time (which bound the overall event). The bingo
+    # cutoff is enforced server-side using cutoff_at — see AMB-013/015.
+    starts_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    cutoff_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     admin_id: Mapped[int] = mapped_column(Integer, ForeignKey("admins.id"), nullable=False)
     admin_email: Mapped[str] = mapped_column(String(100), nullable=False)  # 중복 저장 (조회 편의성)
     bingo_size: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
