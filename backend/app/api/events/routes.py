@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, status
 
 from core.db import AsyncSessionDepends
@@ -187,3 +189,20 @@ async def get_public_event_profile(
             keywords=[str(keyword) for keyword in (event.keywords or [])],
         ),
     )
+
+
+# AMB-015 — server-canonical cutoff for the FE countdown hook.
+# The FE polls this endpoint once at mount, computes `driftMs = serverNow
+# - clientNow`, then ticks against `cutoff_at` using the drift-adjusted
+# clock so an inaccurate device clock still renders the right remaining
+# time. The endpoint is intentionally tiny so a 50-VU smoke (AMB-020)
+# can hammer it cheaply.
+@events_router.get("/{event_id}/cutoff")
+async def get_event_cutoff(event_id: int, session: AsyncSessionDepends):
+    event = await session.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return {
+        "now": datetime.now(timezone.utc).isoformat(),
+        "cutoff_at": event.cutoff_at.isoformat() if event.cutoff_at else None,
+    }

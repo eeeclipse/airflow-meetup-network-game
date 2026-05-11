@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 
 from core.db import AsyncSessionDepends
@@ -5,6 +7,11 @@ from models.bingo import BingoBoards, BingoInteraction
 from models.event import Event
 from models.user import BingoUser
 from api.bingo.bingo_interaction.schema import BingoInteractionResponse, BingoInteractionListResponse
+
+
+# Message returned when the networking-session cutoff has already passed.
+# Centralized so tests + FE error mapping (if added later) can match.
+CUTOFF_MESSAGE = "이벤트 종료 시각이 지나 더 이상 키워드를 전송할 수 없습니다."
 
 
 class BaseBingoInteraction:
@@ -126,6 +133,19 @@ class CreateBingoInteraction(BaseBingoInteraction):
             if event_id is None:
                 prefetched_receiver_board = await BingoBoards.get_board_by_userid(self.async_session, receive_user_id)
                 event_id = prefetched_receiver_board.event_id
+
+            # AMB-015 — server-side cutoff. The FE has its own countdown
+            # but the server is canonical. Refuse new interactions once
+            # `events.cutoff_at` has passed. Legacy events with a NULL
+            # cutoff_at (or a non-datetime value, e.g. from test doubles)
+            # are unaffected.
+            event = await self.async_session.get(Event, event_id)
+            cutoff_at = getattr(event, "cutoff_at", None) if event is not None else None
+            if isinstance(cutoff_at, datetime) and datetime.now(timezone.utc) >= cutoff_at:
+                return BingoInteractionResponse(
+                    ok=False,
+                    message=CUTOFF_MESSAGE,
+                )
 
             # 유저 두 명 + 보드 두 개를 각각 단일 IN 쿼리로 조회
             users_result = await self.async_session.execute(
