@@ -1,5 +1,4 @@
 {
-  "$comment": "Vercel build + rewrites. /api/* is proxied to the FastAPI app deployed on Fly.io so the FE keeps using same-origin URLs and CORS is not needed. If the Fly app name changes, edit the destination below.",
   "rewrites": [
     {
       "source": "/api/:path*",
