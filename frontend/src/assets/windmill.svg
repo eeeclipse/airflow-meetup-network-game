@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true">
+  <!-- 3-blade pinwheel inspired by Apache Airflow's windmill mark -->
+  <g transform="translate(32 32)">
+    <!-- blade 1 -->
+    <path d="M0,0 C-2,-14 -8,-22 -22,-22 C-22,-8 -14,-2 0,0 Z" transform="rotate(0)"/>
+    <!-- blade 2 -->
+    <path d="M0,0 C-2,-14 -8,-22 -22,-22 C-22,-8 -14,-2 0,0 Z" transform="rotate(120)"/>
+    <!-- blade 3 -->
+    <path d="M0,0 C-2,-14 -8,-22 -22,-22 C-22,-8 -14,-2 0,0 Z" transform="rotate(240)"/>
+    <!-- hub -->
+    <circle r="4" fill="currentColor"/>
+  </g>
+</svg>
