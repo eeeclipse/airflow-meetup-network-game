@@ -9,7 +9,9 @@ import { useServerCountdown } from "./useServerCountdown";
  */
 function stubCutoffEndpoint(now: string, cutoffAt: string | null) {
   const json = vi.fn().mockResolvedValue({ now, cutoff_at: cutoffAt });
-  global.fetch = vi.fn().mockResolvedValue({ json }) as unknown as typeof fetch;
+  global.fetch = vi
+    .fn()
+    .mockResolvedValue({ ok: true, status: 200, json }) as unknown as typeof fetch;
 }
 
 describe("useServerCountdown", () => {
@@ -88,5 +90,40 @@ describe("useServerCountdown", () => {
     });
 
     expect(result.current.remainingSec).toBeNull();
+    expect(result.current.error).toBeNull();
+  });
+
+  it("surfaces an error when the cutoff endpoint returns HTTP error", async () => {
+    vi.setSystemTime(new Date("2026-06-20T12:00:00Z"));
+    global.fetch = vi
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: vi.fn(),
+      }) as unknown as typeof fetch;
+
+    const { result } = renderHook(() => useServerCountdown(3));
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+
+    expect(result.current.remainingSec).toBeNull();
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.error?.message).toContain("HTTP 500");
+  });
+
+  it("surfaces a network rejection as an error", async () => {
+    vi.setSystemTime(new Date("2026-06-20T12:00:00Z"));
+    global.fetch = vi
+      .fn()
+      .mockRejectedValue(new Error("network down")) as unknown as typeof fetch;
+
+    const { result } = renderHook(() => useServerCountdown(3));
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+
+    expect(result.current.error?.message).toBe("network down");
   });
 });

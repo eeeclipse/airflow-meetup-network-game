@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { KEYWORDS_TO_PICK } from "../config/game";
 
 export interface UseKeywordPickResult {
@@ -34,10 +34,10 @@ export function useKeywordPick(initial: string[] = []): UseKeywordPickResult {
     });
   }, []);
 
-  const isComplete = useMemo(
-    () => selected.length === KEYWORDS_TO_PICK,
-    [selected],
-  );
+  // Inline comparison — cheaper than wrapping in useMemo for a
+  // single integer compare. Recomputes on every render but the cost
+  // is negligible vs the memoization bookkeeping.
+  const isComplete = selected.length === KEYWORDS_TO_PICK;
 
   return { selected, toggle, isComplete };
 }

@@ -114,6 +114,23 @@ class BaseBingoInteraction:
 
 
 class CreateBingoInteraction(BaseBingoInteraction):
+    async def _is_cutoff_passed(self, event_id: int) -> bool:
+        """AMB-015 — return True if the networking-session cutoff has
+        already passed for this event.
+
+        Defensive on the type of `cutoff_at`: legacy rows with NULL
+        and test doubles that return non-datetime sentinels are both
+        treated as "no cutoff", so existing callers stay unaffected.
+        """
+        event = await self.async_session.get(Event, event_id)
+        cutoff_at = (
+            getattr(event, "cutoff_at", None) if event is not None else None
+        )
+        return (
+            isinstance(cutoff_at, datetime)
+            and datetime.now(timezone.utc) >= cutoff_at
+        )
+
     async def execute(
         self,
         word_id_list: str,
@@ -136,12 +153,8 @@ class CreateBingoInteraction(BaseBingoInteraction):
 
             # AMB-015 — server-side cutoff. The FE has its own countdown
             # but the server is canonical. Refuse new interactions once
-            # `events.cutoff_at` has passed. Legacy events with a NULL
-            # cutoff_at (or a non-datetime value, e.g. from test doubles)
-            # are unaffected.
-            event = await self.async_session.get(Event, event_id)
-            cutoff_at = getattr(event, "cutoff_at", None) if event is not None else None
-            if isinstance(cutoff_at, datetime) and datetime.now(timezone.utc) >= cutoff_at:
+            # `events.cutoff_at` has passed.
+            if await self._is_cutoff_passed(event_id):
                 return BingoInteractionResponse(
                     ok=False,
                     message=CUTOFF_MESSAGE,
