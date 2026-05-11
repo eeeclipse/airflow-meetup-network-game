@@ -2,6 +2,8 @@ import "./App.css";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import Home from "./modules/Home/Home.tsx";
 import BingoGame from "./modules/Bingo/BingoGame.tsx";
+import { OrganizerGate } from "./modules/Organizer/OrganizerGate.tsx";
+import { KeywordPoolEditor } from "./modules/Organizer/KeywordPoolEditor.tsx";
 import LandingHomePage from "./modules/Landing/LandingHomePage.tsx";
 import DemoExperiencePage from "./modules/Landing/DemoExperiencePage.tsx";
 import PublicPrivacyPage from "./modules/Landing/PublicPrivacyPage.tsx";
@@ -30,6 +32,18 @@ function AppRoutes() {
           <Route path="/privacy" element={<PublicPrivacyPage />} />
           <Route path="/bingo" element={<DemoExperiencePage />} />
           <Route path="/admin" element={<AdminRoutesLoginPage />} />
+          <Route
+            path="/organizer"
+            element={
+              <OrganizerGate>
+                <KeywordPoolEditor
+                  eventId={
+                    (import.meta.env.VITE_EVENT_ID as string | undefined) ?? ""
+                  }
+                />
+              </OrganizerGate>
+            }
+          />
           <Route path="/admin/invite" element={<Navigate to={getAdminPath()} replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/members" element={<AdminMembersPage />} />

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
 
 from core.db import AsyncSessionDepends
 from models.event import Event, EventStatus
@@ -206,3 +207,72 @@ async def get_event_cutoff(event_id: int, session: AsyncSessionDepends):
         "now": datetime.now(timezone.utc).isoformat(),
         "cutoff_at": event.cutoff_at.isoformat() if event.cutoff_at else None,
     }
+
+
+# AMB-018 — organizer keyword pool editor.
+#
+# Operates directly on `events.keywords` jsonb (a list of label
+# strings) per the plan addendum — no separate keywords_pool
+# table. Per spec §5.1 the FE applies new keywords only to boards
+# generated AFTER the addition; existing boards are frozen.
+#
+# Auth is intentionally light (a FE PIN gate) — the meetup is a
+# one-shot 50-person event and the worst case of an outsider
+# editing the pool is mid-game confusion. Flagged in the AMB-018
+# ticket if this project ever ships beyond the meetup.
+
+
+class KeywordIn(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=120)
+
+
+@events_router.get("/{event_id}/keywords")
+async def list_event_keywords(
+    event_id: int, session: AsyncSessionDepends
+) -> list[str]:
+    event = await session.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return list(event.keywords or [])
+
+
+@events_router.post("/{event_id}/keywords", status_code=status.HTTP_201_CREATED)
+async def add_event_keyword(
+    event_id: int,
+    body: KeywordIn,
+    session: AsyncSessionDepends,
+):
+    event = await session.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    keyword = body.keyword.strip()
+    current = list(event.keywords or [])
+    if keyword in current:
+        # Idempotent — same label twice does not mutate.
+        return {"keyword": keyword, "added": False}
+    current.append(keyword)
+    # Reassign so SQLAlchemy detects the change on the jsonb column.
+    event.keywords = current
+    await session.commit()
+    return {"keyword": keyword, "added": True}
+
+
+@events_router.delete(
+    "/{event_id}/keywords/{keyword}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_event_keyword(
+    event_id: int,
+    keyword: str,
+    session: AsyncSessionDepends,
+):
+    event = await session.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    current = list(event.keywords or [])
+    if keyword not in current:
+        # No-op for unknown labels — easier client behavior.
+        return None
+    event.keywords = [k for k in current if k != keyword]
+    await session.commit()
+    return None
